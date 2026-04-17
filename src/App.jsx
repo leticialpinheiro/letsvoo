@@ -1077,7 +1077,7 @@ export default function App() {
   );
 
   // Flag para saber se API real está disponível
-  const [useRealApi, setUseRealApi] = useState(false);
+  const [useRealApi, setUseRealApi] = useState(true);
 
   const doSearch = useCallback(async () => {
     if (!origins.length || !dests.length) return;
