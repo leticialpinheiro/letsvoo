@@ -212,24 +212,26 @@ async function searchFlights(origCode, destCode, dateStr, returnDateStr, sType, 
 
   // Converte resposta da apidevoos para o formato interno
   return (data.flightGroups || []).map((g, gi) => {
-    const segs = g.slices?.[0]?.segments || [];
-    const f    = segs[0];
-    const l    = segs[segs.length - 1];
-    const depH = f?.departureTime ? parseInt(f.departureTime.slice(11, 13)) : 8;
-    const depT = f?.departureTime?.slice(11, 16) || "08:00";
-    const arrT = l?.arrivalTime?.slice(11, 16)   || "10:00";
-    const dur  = f?.duration || "2h00";
-    const airline = f?.airline?.name || f?.airline?.code || "—";
-    const code    = f?.airline?.code || "??";
+    const sig   = g.humanSignature || "";
+    const parts = sig.split("-");
+    const airCode = parts[3] || "??";
     const AL_COLORS = { LA:"#C8102E", G3:"#FF6B00", AD:"#003DA5", TP:"#00843D", AA:"#0078D2" };
-    const color = AL_COLORS[code] || "#1a3a5c";
-    const price = g.totalPrice?.amount || 0;
-    const cashUrl = g.offers?.[0]?.deepLink || `https://www.google.com/travel/flights?q=voos+${origCode}+${destCode}`;
+    const AL_NAMES  = { LA:"LATAM", G3:"GOL", AD:"Azul", TP:"TAP", AA:"American" };
+    const color   = AL_COLORS[airCode] || "#1a3a5c";
+    const airline = AL_NAMES[airCode]  || airCode;
+    const flight  = g.flightInfo || {};
+    const depT    = (flight.departureTime || "08:00").slice(0,5);
+    const arrT    = (flight.arrivalTime   || "10:00").slice(0,5);
+    const depH    = parseInt(depT.slice(0,2)) || 8;
+    const dur     = flight.duration || "2h00";
+    const stops   = (flight.stops ?? 0);
+    const price   = g.price?.total || g.totalPrice?.amount || g.fare?.total || 0;
+    const url     = g.deepLink || g.offers?.[0]?.deepLink || `https://www.google.com/travel/flights?q=voos+${origCode}+${destCode}`;
 
     return {
       id:          `api-${gi}-${origCode}-${destCode}-${dateStr}`,
       airline,
-      airlineCode: code,
+      airlineCode: airCode,
       color,
       origin:      origCode,
       destination: destCode,
@@ -238,11 +240,11 @@ async function searchFlights(origCode, destCode, dateStr, returnDateStr, sType, 
       arrTime:     arrT,
       depHour:     depH,
       dur,
-      stops:       segs.length - 1,
+      stops,
       type:        "cash",
       price,
       pax:         paxCount,
-      url:         cashUrl,
+      url,
       fromApi:     true,
     };
   });
